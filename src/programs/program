@@ -1,0 +1,12 @@
+var a;
+var n;
+a = 1;
+n = 10;
+
+yolo n times:
+
+   a = a + 1
+
+endloop;
+
+pr(a);
