@@ -5,6 +5,7 @@ import dh.grammar.DhParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.HashMap;
@@ -78,23 +79,32 @@ public class Interpreter extends DhBaseListener{
 
     @Override
     public void enterLoop(DhParser.LoopContext ctx) {
-        //System.out.println("enter loop" + ctx);
-       
+
+
     }
 
     @Override
     public void exitLoop(DhParser.LoopContext ctx) {
-        System.out.println("exit loop" + ctx);
+
+        ParseTreeWalker walker = new ParseTreeWalker();
+
+        int times = stack.pop();
+        System.out.println("n = " + times);
+
+        for (int i = 0; i < times -1; i++) {//why -1?
+            walker.walk(this, ctx.code());
+        }
+
     }
+    //i = i + 1
+    //sum = sum + i
 
     @Override
     public void enterPrint(DhParser.PrintContext ctx) { }
 
     @Override
     public void exitPrint(DhParser.PrintContext ctx) {
-
         System.out.println(stack.pop());
-
     }
 
     @Override
