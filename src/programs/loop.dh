@@ -3,14 +3,12 @@ var sum;
 var n;
 a = 0;
 sum = 0;
-n = 10;
+n = 4;
 
-yolo n times:
+yolo 2 times:
 
-   a = a + 1;
-   sum = sum + a;
-   pr(sum)
+   pr(42)
 
 endloop;
 
-pr(sum);
+

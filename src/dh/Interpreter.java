@@ -80,7 +80,6 @@ public class Interpreter extends DhBaseListener{
     @Override
     public void enterLoop(DhParser.LoopContext ctx) {
 
-
     }
 
     @Override
@@ -89,15 +88,12 @@ public class Interpreter extends DhBaseListener{
         ParseTreeWalker walker = new ParseTreeWalker();
 
         int times = stack.pop();
-        System.out.println("n = " + times);
 
-        for (int i = 0; i < times -1; i++) {//why -1?
+        for (int i = 0; i < times-1; i++) {
             walker.walk(this, ctx.code());
         }
 
     }
-    //i = i + 1
-    //sum = sum + i
 
     @Override
     public void enterPrint(DhParser.PrintContext ctx) { }
