@@ -44,51 +44,58 @@ public class Compiler extends DhBaseListener {
         System.err.println(infnam + ":" + line + ": " + msg);
     }
 
-//    @Override
-//    public void enterCode(DhParser.CodeContext ctx) {
+    @Override
+    public void enterCode(DhParser.CodeContext ctx) {
 //        tracePrint("Initialize SP");
-//        out.emitInitSP();
-//    }
-//
-//    @Override
-//    public void enterDecl(DhParser.DeclContext ctx) {
-//        String name = ctx.ID().getText();
-//        int addr = out.newVarAddr();
-//        Integer old = varAddr.put(name, addr);
-//        if (old != null) {
-//            error(ctx.ID().getSymbol().getLine(), "redefined " + name);
-//        }
-//    }
-//
-//    @Override
-//    public void exitAssign(DhParser.AssignContext ctx) {
-//        int a = getVarAddr(ctx.ID().getSymbol());
+        out.emitInitSP();
+    }
+
+    @Override
+    public void enterDecl(DhParser.DeclContext ctx) {
+        String name = ctx.ID().getText();
+        int addr = out.newVarAddr();
+        Integer old = varAddr.put(name, addr);
+        if (old != null) {
+            error(ctx.ID().getSymbol().getLine(), "redefined " + name);
+        }
+    }
+
+    @Override
+    public void exitAssign(DhParser.AssignContext ctx) {
+        int a = getVarAddr(ctx.ID().getSymbol());
 //        tracePrint("Pop from stack and put in "+a);
-//        out.emitPopD();
-//        out.emitAInstr(a);
-//        out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);
-//    }
-//
-//
-//    @Override
-//    public void exitAdd(DhParser.AddContext ctx) {
-//        ParseTree operator = ctx.getChild(1); // the second token, if it's there, is the operator
-//        if (operator != null && "+".equals(operator.getText())) { // if it's plus, this is an addition
-//            // Add the top two numbers on the stack, leaving only the sum.
+        out.emitPopD();
+        out.emitAInstr(a);
+        out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);
+    }
+
+
+    @Override
+    public void exitAdd(DhParser.AddContext ctx) {
+        ParseTree operator = ctx.getChild(1); // the second token, if it's there, is the operator
+        if (operator != null && "+".equals(operator.getText())) { // if it's plus, this is an addition
+            // Add the top two numbers on the stack, leaving only the sum.
 //            tracePrint("Add top two numbers on the stack, leaving the sum");
-//            out.emitGetTwoOperands();         // Get operands.
-//            out.emitCInstr(HackGen.DestD, HackGen.DPlusM, 0); // Add them.
-//            out.emitReplaceTopWithD();        // Replace top of stack with sum.
-//        } else {
-//            // No operator we know, so it must be a lone term. Just leave it on the stack.
-//        }
-//    }
+            out.emitGetTwoOperands();         // Get operands.
+            out.emitCInstr(HackGen.DestD, HackGen.DPlusM, 0); // Add them.
+            out.emitReplaceTopWithD();        // Replace top of stack with sum.
+        } else {
+            // No operator we know, so it must be a lone term. Just leave it on the stack.
+        }
+    }
+
+    @Override
+    public void exitPrint(DhParser.PrintContext ctx) {
+        out.emitPopD();
+        out.emitAInstr(SCREEN);
+        out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);
+    }
 
     @Override
     public void enterAtomExpr(DhParser.AtomExprContext ctx) {
         if (ctx.ID() != null) {
             int a = getVarAddr(ctx.ID().getSymbol());
-            tracePrint("Push contents of "+a+" on stack");
+//            tracePrint("Push contents of "+a+" on stack");
             out.emitAInstr(a);
             out.emitCInstr(HackGen.DestD, HackGen.CompM, 0);
             out.emitPushD();
@@ -102,16 +109,15 @@ public class Compiler extends DhBaseListener {
     }
 
     @Override
+    public void enterLoop(DhParser.LoopContext ctx) {
+        out.emitPopD();
+    }
+
+    @Override
     public void exitLoop(DhParser.LoopContext ctx) {
 
     }
-    @Override
-    public void exitPrint(DhParser.PrintContext ctx) {
 
-        out.emitPopD();
-        out.emitAInstr(SCREEN);
-        out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);
-    }
 
 
 }
