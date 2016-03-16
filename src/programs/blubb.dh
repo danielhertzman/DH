@@ -9,4 +9,4 @@ yolo n times:
     b = b + a
 endloop;
 
-pr(a);
+pr(b);

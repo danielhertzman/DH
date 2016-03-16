@@ -111,12 +111,29 @@ public class Compiler extends DhBaseListener {
 
     @Override
     public void enterLoop(DhParser.LoopContext ctx) {
-        int loopAddr = out.currentCodeAddress();
-        setLoopAddr(loopAddr);
-        int n = getVarAddr(ctx.expr().atomExpr().ID().getSymbol());
-        out.emitAInstr(n);
-        out.emitCInstr(HackGen.DestD, HackGen.CompA, HackGen.NoJump);
-        out.emitPushD();
+
+
+//        int n = Integer.parseInt(ctx.expr().atomExpr().INT().getSymbol().getText());
+        out.emitPushD(); //pop n
+        int tmp = out.newVarAddr(); // create variable tmp
+        out.emitAInstr(tmp); // refers to some memory location
+        out.emitCInstr(HackGen.DestD, HackGen.CompA, HackGen.NoJump); // m = tmp (tmp = n)
+
+        loopAddr = out.currentCodeAddress(); // enter yolo
+
+        out.emitAInstr(tmp);
+        out.emitCInstr(HackGen.DestD, HackGen.CompM, 0); // m = 0
+        out.emitPushD(); // push tmp
+
+        out.emitAInstr(0);
+        out.emitCInstr(HackGen.DestD, HackGen.CompA, 0); // m = 0
+        out.emitPushD(); // push 0
+
+        out.emitGetTwoOperands();
+        out.emitCInstr(HackGen.DestD, HackGen.CompA, HackGen.JLE);
+
+
+
     }
 
     @Override
@@ -127,7 +144,6 @@ public class Compiler extends DhBaseListener {
         out.reviseAInstr(out.emitAInstr(0), endAddr);
     }
 
-    private void setLoopAddr(int loopAddr) {this.loopAddr = loopAddr;}
 
 
 
