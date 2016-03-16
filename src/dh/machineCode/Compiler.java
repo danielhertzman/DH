@@ -15,6 +15,7 @@ public class Compiler extends DhBaseListener {
     private final HackGen out;
     private final HashMap<String, Integer> varAddr = new HashMap<String, Integer>();
     private final Stack<Integer> addrStack = new Stack<Integer>();
+    private int loopAddr;
 
     public static final int SCREEN = 16384;
 
@@ -110,13 +111,23 @@ public class Compiler extends DhBaseListener {
 
     @Override
     public void enterLoop(DhParser.LoopContext ctx) {
-        out.emitPopD();
+        int loopAddr = out.currentCodeAddress();
+        setLoopAddr(loopAddr);
+        int n = getVarAddr(ctx.expr().atomExpr().ID().getSymbol());
+        out.emitAInstr(n);
+        out.emitCInstr(HackGen.DestD, HackGen.CompA, HackGen.NoJump);
+        out.emitPushD();
     }
 
     @Override
     public void exitLoop(DhParser.LoopContext ctx) {
-
+        out.emitAInstr(loopAddr);
+        out.emitCInstr(HackGen.DestNone, HackGen.CompNone, HackGen.JMP);
+        int endAddr = out.currentCodeAddress();
+        out.reviseAInstr(out.emitAInstr(0), endAddr);
     }
+
+    private void setLoopAddr(int loopAddr) {this.loopAddr = loopAddr;}
 
 
 

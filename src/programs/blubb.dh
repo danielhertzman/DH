@@ -1,7 +1,12 @@
 var a;
 var b;
-var c;
-a = 10;
-b = 20;
-c = a + b;
-pr(c);
+var n;
+a = 0;
+n = 3;
+
+yolo n times:
+    a = a +1;
+    b = b + a
+endloop;
+
+pr(a);
