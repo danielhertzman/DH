@@ -1,14 +1,17 @@
 var a;
 var sum;
-var n;
+var i;
+i = 10;
 a = 0;
 sum = 0;
-n = 4;
 
-yolo 2 times:
+yolo i times:
 
-   pr(42)
+    a = a + 1;
+    sum = sum + a
 
 endloop;
+
+pr(sum);
 
 
