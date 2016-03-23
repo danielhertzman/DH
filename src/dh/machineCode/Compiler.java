@@ -13,9 +13,9 @@ public class Compiler extends DhBaseListener {
     private final String infnam;
     private final boolean traceOn;
     private final HackGen out;
-    private final HashMap<String, Integer> varAddr = new HashMap<String, Integer>();
-    private final Stack<Integer> addrStack = new Stack<Integer>();
-    private int loopAddr;
+    private final HashMap<String, Integer> varAddress = new HashMap<String, Integer>();
+    //private final Stack<Integer> addressStack = new Stack<Integer>();
+    private int loopAddress;
 
     public static final int SCREEN = 16384;
 
@@ -31,14 +31,16 @@ public class Compiler extends DhBaseListener {
     }
 
     private int getVarAddr(Token tok) {
+
         String name = tok.getText();
-        Integer a = varAddr.get(name);
+        Integer a = varAddress.get(name);
 
         if (a == null) {
             return 0;
         } else {
             return a;
         }
+
     }
 
     private void error(int line, String msg) {
@@ -47,36 +49,43 @@ public class Compiler extends DhBaseListener {
 
     @Override
     public void enterCode(DhParser.CodeContext ctx) {
-//        tracePrint("Initialize SP");
+        tracePrint("Initialize SP");
         out.emitInitSP();
     }
 
     @Override
     public void enterDecl(DhParser.DeclContext ctx) {
+
         String name = ctx.ID().getText();
         int addr = out.newVarAddr();
-        Integer old = varAddr.put(name, addr);
+        Integer old = varAddress.put(name, addr);
+
         if (old != null) {
             error(ctx.ID().getSymbol().getLine(), "redefined " + name);
         }
+
     }
 
     @Override
     public void exitAssign(DhParser.AssignContext ctx) {
+
         int a = getVarAddr(ctx.ID().getSymbol());
-//        tracePrint("Pop from stack and put in "+a);
-        out.emitPopD();
+        tracePrint("Pop from stack and put in "+a);
+        out.emitPopStack2D();
         out.emitAInstr(a);
-        out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);
+        out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);//Load M[A] with D
+
     }
 
 
     @Override
     public void exitAdd(DhParser.AddContext ctx) {
+
         ParseTree operator = ctx.getChild(1); // the second token, if it's there, is the operator
+
         if (operator != null && "+".equals(operator.getText())) { // if it's plus, this is an addition
             // Add the top two numbers on the stack, leaving only the sum.
-//            tracePrint("Add top two numbers on the stack, leaving the sum");
+            tracePrint("Add top two numbers on the stack, leaving the sum");
             out.emitGetTwoOperands();         // Get operands.
             out.emitCInstr(HackGen.DestD, HackGen.DPlusM, 0); // Add them.
             out.emitReplaceTopWithD();        // Replace top of stack with sum.
@@ -87,58 +96,57 @@ public class Compiler extends DhBaseListener {
 
     @Override
     public void exitPrint(DhParser.PrintContext ctx) {
-        out.emitPopD();
+        out.emitPopStack2D();
         out.emitAInstr(SCREEN);
         out.emitCInstr(HackGen.DestM, HackGen.CompD, 0);
     }
 
     @Override
     public void enterAtomExpr(DhParser.AtomExprContext ctx) {
+
         if (ctx.ID() != null) {
+
             int a = getVarAddr(ctx.ID().getSymbol());
-//            tracePrint("Push contents of "+a+" on stack");
+            tracePrint("Push contents of "+a+" on stack");
             out.emitAInstr(a);
             out.emitCInstr(HackGen.DestD, HackGen.CompM, 0);
-            out.emitPushD();
+            out.emitPushD2Stack();
+
         } else if (ctx.INT() != null) {
+
             int i = Integer.parseInt(ctx.INT().getText());
             tracePrint("Push "+i+" on stack");
             out.emitAInstr(i);
             out.emitCInstr(HackGen.DestD, HackGen.CompA, 0);
-            out.emitPushD();
+            out.emitPushD2Stack();
         }
     }
 
     @Override
     public void enterLoop(DhParser.LoopContext ctx) {
 
+        int iAdress = varAddress.get("i");
 
-//        int n = Integer.parseInt(ctx.expr().atomExpr().INT().getSymbol().getText());
-        out.emitPushD(); //pop n
-        int tmp = out.newVarAddr(); // create variable tmp
-        out.emitAInstr(tmp); // refers to some memory location
-        out.emitCInstr(HackGen.DestD, HackGen.CompA, HackGen.NoJump); // m = tmp (tmp = n)
+        loopAddress = out.currentCodeAddress();
 
-        loopAddr = out.currentCodeAddress(); // enter yolo
+        out.emitAInstr(iAdress);
+        out.emitCInstr(HackGen.DestD, HackGen.CompM, HackGen.NoJump);
+        out.emitPushD2Stack();
 
-        out.emitAInstr(tmp);
-        out.emitCInstr(HackGen.DestD, HackGen.CompM, 0); // m = 0
-        out.emitPushD(); // push tmp
+        out.emitPopStack2D();
+        out.emitAInstr(loopAddress);
+        out.emitCInstr(HackGen.DestD, HackGen.DMinus1, HackGen.JLT);
 
-        out.emitAInstr(0);
-        out.emitCInstr(HackGen.DestD, HackGen.CompA, 0); // m = 0
-        out.emitPushD(); // push 0
-
-        out.emitGetTwoOperands();
-        out.emitCInstr(HackGen.DestD, HackGen.CompA, HackGen.JLE);
-
+        out.emitAInstr(iAdress);
+        out.emitCInstr(HackGen.DestM, HackGen.CompD, HackGen.NoJump);
 
 
     }
 
     @Override
     public void exitLoop(DhParser.LoopContext ctx) {
-        out.emitAInstr(loopAddr);
+
+        out.emitAInstr(loopAddress);
         out.emitCInstr(HackGen.DestNone, HackGen.CompNone, HackGen.JMP);
         int endAddr = out.currentCodeAddress();
         out.reviseAInstr(out.emitAInstr(0), endAddr);
@@ -148,3 +156,27 @@ public class Compiler extends DhBaseListener {
 
 
 }
+    /*
+        //try 1
+        //0. enter loop, i-value is on the stack.
+        //1. Load D with M[A] (D <- 3), because A=SP
+        //2. Create iAddr
+        //3. emitAInstr(iAddr), A <- iAddr
+        //4. emitCInstr(M[A], D(3), NoJump), iAddr <- D(3), (D holds iAddr value)
+
+        out.emitCInstr(HackGen.DestD, HackGen.DestM, HackGen.NoJump);
+        int iAddr = out.newVarAddr();
+        out.emitAInstr(iAddr);
+        out.emitCInstr(HackGen.DestM, HackGen.DestD, HackGen.NoJump);
+
+        //Detta ger iAddr = 19, som att 16 + 3 sparas på iAddr
+
+
+        //try 2
+        out.emitPopStack2D(); //stack pop to D
+        int iAddr = out.newVarAddr(); //create iAddr
+        out.emitAInstr(iAddr);//A <- iAddr
+        out.emitCInstr(HackGen.DestM, HackGen.CompD, HackGen.NoJump);//move value in D to iAddr
+
+        //detta ger att iAddr inte får något värde, och 3(i) sparas på memory[15].
+    */

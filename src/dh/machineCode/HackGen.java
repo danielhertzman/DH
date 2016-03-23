@@ -125,7 +125,7 @@ public class HackGen {
     /** Emits a sequence of instructions with the effect of pushing the contents
      * of the D register onto the stack (destroying the contents of both A and
      * D in the process). */
-    public void emitPushD() {
+    public void emitPushD2Stack() {
         emitAInstr(SPAddr);           // @SP
         emitCInstr(DestA, CompM, 0);  // A=SP
         emitCInstr(DestM, CompD, 0);  // [SP]=D
@@ -135,9 +135,9 @@ public class HackGen {
     }
 
     /** Emits a sequence of instructions with the effect of popping one value
-     * from the stack and placing it i the D register (destroying the contents
+     * from the stack and placing it in the D register (destroying the contents
      * of A in the process). */
-    public void emitPopD() {
+    public void emitPopStack2D() {
         emitAInstr(SPAddr);                  // @SP
         emitCInstr(DestD, MMinus1, 0);       // D=SP-1
         emitCInstr(DestM | DestA, CompD, 0); // SP=SP-1; A=SP

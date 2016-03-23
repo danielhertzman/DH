@@ -9,17 +9,9 @@ import dh.grammar.*;
 
 public class CompileDh {
     public static void main(String[] args) throws IOException {
-        String infnam = "src/programs/blubb.dh";
-        String outfnam = "src/programs/blubbBin.hack";
+        String infnam = "src/programs/loop.dh";
+        String outfnam = "src/programs/loopBin.hack";
         boolean traceOn = args.length < 3 || "traceOn".equalsIgnoreCase(args[2]);
-
-//        if (args.length > 0) {
-//            infnam = args[0];
-//        } else {
-//            System.out.println("Vilken fil vill du köra?");
-//            Scanner scanner = new Scanner(System.in);
-//            infnam = scanner.nextLine();
-//        }
 
         ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(infnam));
         DhLexer lexer = new DhLexer(input);
@@ -27,7 +19,8 @@ public class CompileDh {
         DhParser parser = new DhParser(tokens);
         ParseTree tree = parser.code();
         ParseTreeWalker walker = new ParseTreeWalker();
-        HackGen out = new HackGen(1024, 2048, 1025);
+//        HackGen out = new HackGen(1024, 2048, 1025);
+        HackGen out = new HackGen(2, 16, 3);
         walker.walk(new Compiler(infnam, out, traceOn), tree);
         Writer w = new OutputStreamWriter(new FileOutputStream(outfnam), "US-ASCII");
         out.outputCode(w);
