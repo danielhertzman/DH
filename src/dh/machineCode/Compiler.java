@@ -16,6 +16,7 @@ public class Compiler extends DhBaseListener {
     private final HashMap<String, Integer> varAddress = new HashMap<String, Integer>();
     //private final Stack<Integer> addressStack = new Stack<Integer>();
     private int loopAddress;
+    private int jumpEndInstructionAddr;
 
     public static final int SCREEN = 16384;
 
@@ -134,7 +135,7 @@ public class Compiler extends DhBaseListener {
         out.emitPushD2Stack();
 
         out.emitPopStack2D();
-        out.emitAInstr(loopAddress);
+        jumpEndInstructionAddr = out.emitAInstr(0);
         out.emitCInstr(HackGen.DestD, HackGen.DMinus1, HackGen.JLT);
 
         out.emitAInstr(iAdress);
@@ -149,34 +150,9 @@ public class Compiler extends DhBaseListener {
         out.emitAInstr(loopAddress);
         out.emitCInstr(HackGen.DestNone, HackGen.CompNone, HackGen.JMP);
         int endAddr = out.currentCodeAddress();
-        out.reviseAInstr(out.emitAInstr(0), endAddr);
+        out.reviseAInstr(jumpEndInstructionAddr, endAddr);
     }
 
 
 
-
 }
-    /*
-        //try 1
-        //0. enter loop, i-value is on the stack.
-        //1. Load D with M[A] (D <- 3), because A=SP
-        //2. Create iAddr
-        //3. emitAInstr(iAddr), A <- iAddr
-        //4. emitCInstr(M[A], D(3), NoJump), iAddr <- D(3), (D holds iAddr value)
-
-        out.emitCInstr(HackGen.DestD, HackGen.DestM, HackGen.NoJump);
-        int iAddr = out.newVarAddr();
-        out.emitAInstr(iAddr);
-        out.emitCInstr(HackGen.DestM, HackGen.DestD, HackGen.NoJump);
-
-        //Detta ger iAddr = 19, som att 16 + 3 sparas på iAddr
-
-
-        //try 2
-        out.emitPopStack2D(); //stack pop to D
-        int iAddr = out.newVarAddr(); //create iAddr
-        out.emitAInstr(iAddr);//A <- iAddr
-        out.emitCInstr(HackGen.DestM, HackGen.CompD, HackGen.NoJump);//move value in D to iAddr
-
-        //detta ger att iAddr inte får något värde, och 3(i) sparas på memory[15].
-    */
